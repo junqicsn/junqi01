@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>天骄七合一验号器 - 腾讯/无畏/暗区/火影/和平/三角洲/王者</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f5f7fb; margin: 0; padding: 16px; color: #1e293b; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .card { background: white; border-radius: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 24px; }
+        .tabs { display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
+        .tab { padding: 10px 20px; cursor: pointer; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .platform-selector { margin-bottom: 16px; display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px 16px; border-radius: 40px; width: fit-content; }
+        textarea { width: 100%; padding: 14px; font-family: monospace; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 20px; resize: vertical; background: #fefce8; line-height: 1.4; }
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 20px; background: #f8fafc; padding: 16px; text-align: center; cursor: pointer; margin-top: 16px; transition: 0.2s; font-size: 15px; }
+        .upload-area:hover { border-color: #3b82f6; background: #eff6ff; }
+        .file-input { display: none; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 60px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; touch-action: manipulation; }
+        .btn:active { transform: scale(0.97); }
+        .btn-outline { background: white; border: 1px solid #cbd5e1; color: #1e293b; }
+        .btn-clear { background: #ef4444; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: center; background: #f8fafc; padding: 12px; border-radius: 24px; }
+        .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .filter-group label { font-size: 13px; font-weight: 500; color: #475569; }
+        select { padding: 6px 12px; border-radius: 40px; border: 1px solid #cbd5e1; background: white; font-size: 13px; }
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; margin-top: 20px; }
+        .result-card { background: white; border-radius: 24px; padding: 18px; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; touch-action: manipulation; }
+        .result-card:active { transform: scale(0.98); background-color: #f8fafc; }
+        .status-badge { display: inline-block; padding: 6px 14px; border-radius: 40px; font-size: 13px; font-weight: 600; }
+        .status-success { background: #dcfce7; color: #15803d; }
+        .status-fail { background: #fee2e2; color: #b91c1c; }
+        .status-authfail { background: #ffedd5; color: #9a3412; }
+        .token-preview { font-family: monospace; font-size: 12px; background: #f1f5f9; padding: 6px 10px; border-radius: 16px; word-break: break-all; margin-top: 10px; }
+        .response-preview { font-size: 13px; color: #334155; background: #f8fafc; padding: 12px; border-radius: 18px; margin-top: 12px; max-height: 120px; overflow: auto; white-space: pre-wrap; border: 1px solid #e2e8f0; }
+        .ninja-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; font-size: 15px; font-weight: 500; }
+        .ninja-stats span { background: #f1f5f9; padding: 4px 12px; border-radius: 40px; }
+        .hpjy-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; font-size: 15px; font-weight: 500; }
+        .hpjy-stats span { background: #f1f5f9; padding: 4px 12px; border-radius: 40px; }
+        .sjz-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; font-size: 15px; font-weight: 500; }
+        .sjz-stats span { background: #f1f5f9; padding: 4px 12px; border-radius: 40px; }
+        .wzry-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; font-size: 15px; font-weight: 500; }
+        .wzry-stats span { background: #f1f5f9; padding: 4px 12px; border-radius: 40px; }
+        .loading { text-align: center; padding: 40px; color: #475569; font-size: 16px; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 24px; border-radius: 60px; font-size: 14px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 1000; text-align: center; max-width: 90%; white-space: normal; }
+        h2 { margin: 0 0 6px; font-size: 1.6rem; }
+        .sub { color: #64748b; font-size: 14px; }
+        hr { margin: 18px 0; border: none; border-top: 1px solid #e2e8f0; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .action-group { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; flex-wrap: wrap; }
+        .detail-line { font-size: 13px; margin: 4px 0; display: flex; flex-wrap: wrap; justify-content: space-between; }
+        @media (max-width: 640px) {
+            body { padding: 12px; }
+            .card { padding: 16px; }
+            .btn { padding: 8px 16px; font-size: 13px; }
+            .result-card { padding: 14px; }
+            .filter-group label { font-size: 12px; }
+            select { font-size: 12px; padding: 4px 8px; }
+            .cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="tabs">
+            <div class="tab active" data-game="tx">🎮 腾讯全游戏</div>
+            <div class="tab" data-game="wwqy">⚔️ 无畏契约</div>
+            <div class="tab" data-game="aqtw">🔫 暗区突围</div>
+            <div class="tab" data-game="ninja">🍥 火影忍者</div>
+            <div class="tab" data-game="hpjy">✈️ 和平精英</div>
+            <div class="tab" data-game="sjz">🎯 三角洲</div>
+            <div class="tab" data-game="wzry">👑 王者荣耀</div>
+        </div>
+        <h2 id="gameTitle">腾讯全游戏验号器</h2>
+        <div class="sub" id="gameSub">自动提取 access_token&openid&pay_token，支持在线/禁玩筛选</div>
+        <div id="platformSelector" class="platform-selector" style="display: none;">
+            <span>📱 平台选择：</span>
+            <select id="platformSelect">
+                <option value="android">安卓 (Android)</option>
+                <option value="ios">苹果 (iOS)</option>
+            </select>
+        </div>
+        <hr>
+        <textarea id="textInput" rows="8" placeholder="支持任意格式，例如：
+access_token= openid= pay_token=
+或
+access_token=AAA&openid=BBB&pay_token=CCC
+每行一个账号即可"></textarea>
+        <div class="upload-area" id="uploadArea">
+            <div>📂 点击或拖拽上传 .txt 文件（自动填充）</div>
+            <input type="file" id="fileInput" accept=".txt" class="file-input">
+        </div>
+        <div class="action-group">
+            <button id="clearBtn" class="btn btn-clear">🗑️ 清空输入</button>
+            <button id="queryBtn" class="btn">🚀 开始批量查询</button>
+        </div>
+    </div>
+    <div id="resultsSection" style="display: none;">
+        <div class="toolbar">
+            <h3>📋 查询结果</h3>
+            <button id="exportBtn" class="btn btn-outline">📎 导出当前筛选结果 (TXT)</button>
+        </div>
+        <div id="filterBar" class="filter-bar"></div>
+        <div id="cardsContainer" class="cards-grid"></div>
+    </div>
+</div>
+<div id="toast" class="toast">✅ 已复制</div>
+
+<script>
+    (function() {
+        let currentGame = 'tx';
+        let currentResults = [];
+        let currentFilters = {};
+
+        const API_URL = 'api.php';
+
+        const textarea = document.getElementById('textInput');
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const queryBtn = document.getElementById('queryBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const cardsContainer = document.getElementById('cardsContainer');
+        const exportBtn = document.getElementById('exportBtn');
+        const filterBar = document.getElementById('filterBar');
+        const toast = document.getElementById('toast');
+        const tabs = document.querySelectorAll('.tab');
+        const gameTitle = document.getElementById('gameTitle');
+        const gameSub = document.getElementById('gameSub');
+        const platformSelector = document.getElementById('platformSelector');
+        const platformSelect = document.getElementById('platformSelect');
+
+        const filtersConfig = {
+            tx: [
+                { id: 'status', label: '状态筛选', options: [
+                    { value: 'all', text: '全部记录' },
+                    { value: 'success', text: '✅ 成功' },
+                    { value: 'auth_fail', text: '⚠️ 鉴权失败' },
+                    { value: 'other_fail', text: '❌ 其他失败' }
+                ]},
+                { id: 'online', label: '在线状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'online', text: '在线' },
+                    { value: 'offline', text: '不在线' }
+                ]},
+                { id: 'ban', label: '禁玩状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'banned', text: '禁玩' },
+                    { value: 'unbanned', text: '未禁玩' }
+                ]}
+            ],
+            wwqy: [
+                { id: 'status', label: '状态筛选', options: [
+                    { value: 'all', text: '全部记录' },
+                    { value: 'success', text: '✅ 成功' },
+                    { value: 'auth_fail', text: '⚠️ 鉴权失败' },
+                    { value: 'other_fail', text: '❌ 其他失败' }
+                ]},
+                { id: 'rank', label: '段位', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '青铜', text: '青铜' }, { value: '白银', text: '白银' },
+                    { value: '黄金', text: '黄金' }, { value: '铂金', text: '铂金' },
+                    { value: '钻石', text: '钻石' }, { value: '超凡', text: '超凡' },
+                    { value: '神话', text: '神话' }, { value: '赋能', text: '赋能' }
+                ]},
+                { id: 'level', label: '等级区间', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-10', text: '0-10级' }, { value: '10-20', text: '10-20级' },
+                    { value: '20-30', text: '20-30级' }, { value: '30-40', text: '30-40级' },
+                    { value: '40-50', text: '40-50级' }, { value: '50+', text: '50级以上' }
+                ]},
+                { id: 'account', label: '账号状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'unbanned', text: '未封禁（正常）' },
+                    { value: 'banned', text: '封禁（已封禁）' }
+                ]},
+                { id: 'mute', label: '禁言状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'muted', text: '禁言（含已禁言）' },
+                    { value: 'unmuted', text: '不禁言' }
+                ]}
+            ],
+            aqtw: [
+                { id: 'status', label: '状态筛选', options: [
+                    { value: 'all', text: '全部记录' },
+                    { value: 'success', text: '✅ 成功' },
+                    { value: 'auth_fail', text: '⚠️ 鉴权失败' },
+                    { value: 'other_fail', text: '❌ 其他失败' }
+                ]},
+                { id: 'coin', label: '科恩币区间', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-1m', text: '0-1M' }, { value: '1-3m', text: '1-3M' },
+                    { value: '3-6m', text: '3-6M' }, { value: '6-10m', text: '6-10M' },
+                    { value: '10-20m', text: '10-20M' }, { value: '20-50m', text: '20-50M' },
+                    { value: '50-100m', text: '50-100M' }, { value: '100m+', text: '100M以上' }
+                ]},
+                { id: 'warehouse', label: '仓库价值区间', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-1m', text: '0-1M' }, { value: '1-3m', text: '1-3M' },
+                    { value: '3-6m', text: '3-6M' }, { value: '6-10m', text: '6-10M' },
+                    { value: '10-20m', text: '10-20M' }, { value: '20-50m', text: '20-50M' },
+                    { value: '50-100m', text: '50-100M' }, { value: '100m+', text: '100M以上' }
+                ]},
+                { id: 'level', label: '等级区间', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-10', text: '0-10级' }, { value: '10-20', text: '10-20级' },
+                    { value: '20-29', text: '20-29级' }, { value: '30+', text: '30级以上' }
+                ]},
+                { id: 'ban', label: '封号状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '未封号', text: '未封号' },
+                    { value: '封禁中', text: '封禁中' }
+                ]},
+                { id: 'online', label: '在线状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '在线', text: '在线' },
+                    { value: '离线', text: '离线' }
+                ]}
+            ],
+            ninja: [
+                { id: 'status', label: '状态筛选', options: [
+                    { value: 'all', text: '全部记录' },
+                    { value: 'success', text: '✅ 成功' },
+                    { value: 'auth_fail', text: '⚠️ 鉴权失败' },
+                    { value: 'other_fail', text: '❌ 其他失败' }
+                ]},
+                { id: 's_ninja', label: 'S忍者', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-10', text: '0~10 S' }, { value: '10-20', text: '10~20 S' },
+                    { value: '20-30', text: '20~30 S' }, { value: '30-40', text: '30~40 S' },
+                    { value: '40-50', text: '40~50 S' }, { value: '50+', text: '50 S以上' }
+                ]},
+                { id: 'a_ninja', label: 'A忍者', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-10', text: '0~10 A' }, { value: '10-20', text: '10~20 A' },
+                    { value: '20-30', text: '20~30 A' }, { value: '30-50', text: '30~50 A' },
+                    { value: '50-80', text: '50~80 A' }, { value: '80-100', text: '80~100 A' },
+                    { value: '100+', text: '100 A以上' }
+                ]},
+                { id: 'b_ninja', label: 'B忍者', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-20', text: '0~20 B' }, { value: '20-50', text: '20~50 B' },
+                    { value: '50-80', text: '50~80 B' }, { value: '80-100', text: '80~100 B' },
+                    { value: '100+', text: '100 B以上' }
+                ]},
+                { id: 'c_ninja', label: 'C忍者', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-20', text: '0~20 C' }, { value: '20-50', text: '20~50 C' },
+                    { value: '50-70', text: '50~70 C' }, { value: '70+', text: '70 C以上' }
+                ]},
+                { id: 'total_ninja', label: '总忍者数量', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-100', text: '0~100 总忍者' }, { value: '100-200', text: '100~200 总忍者' },
+                    { value: '200-300', text: '200~300 总忍者' }, { value: '300-400', text: '300~400 总忍者' },
+                    { value: '400+', text: '400 总忍者以上' }
+                ]},
+                { id: 'online', label: '在线状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '在线', text: '在线' },
+                    { value: '离线', text: '离线' }
+                ]}
+            ],
+            hpjy: [
+                { id: 'status', label: '状态筛选', options: [
+                    { value: 'all', text: '全部记录' },
+                    { value: 'success', text: '✅ 成功' },
+                    { value: 'auth_fail', text: '⚠️ 鉴权失败' },
+                    { value: 'other_fail', text: '❌ 其他失败' }
+                ]},
+                { id: 'level', label: '等级区间', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-5', text: '5级以下' }, { value: '5-10', text: '5-10级' },
+                    { value: '10-30', text: '10-30级' }, { value: '30-40', text: '30-40级' },
+                    { value: '40-60', text: '40-60级' }, { value: '60+', text: '60级以上' }
+                ]},
+                { id: 'rank', label: '段位', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '青铜', text: '青铜' }, { value: '白银', text: '白银' },
+                    { value: '黄金', text: '黄金' }, { value: '铂金', text: '铂金' },
+                    { value: '星钻', text: '星钻' }, { value: '王牌以上', text: '王牌段位以上' }
+                ]},
+                { id: 'online', label: '在线状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '在线', text: '在线' },
+                    { value: '离线', text: '离线' }
+                ]}
+            ],
+            sjz: [
+                { id: 'status', label: '状态筛选', options: [
+                    { value: 'all', text: '全部记录' },
+                    { value: 'success', text: '✅ 成功' },
+                    { value: 'auth_fail', text: '⚠️ 鉴权失败' },
+                    { value: 'other_fail', text: '❌ 其他失败' }
+                ]},
+                { id: 'level', label: '等级区间', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-12', text: '0-12级' }, { value: '12-30', text: '12-30级' },
+                    { value: '30-60', text: '30-60级' }
+                ]},
+                { id: 'ban', label: '封号状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '未封号', text: '未封号' },
+                    { value: '已封号', text: '已封号' }
+                ]},
+                { id: 'freeze', label: '冻结状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '未冻结', text: '未冻结' },
+                    { value: '冻结', text: '冻结' }
+                ]},
+                { id: 'online', label: '在线状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '在线', text: '在线' },
+                    { value: '离线', text: '离线' }
+                ]},
+                { id: 'total_value', label: '总价值 (M)', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-1', text: '0-1M' }, { value: '1-10', text: '1-10M' },
+                    { value: '10-20', text: '10-20M' }, { value: '20-30', text: '20-30M' },
+                    { value: '30-40', text: '30-40M' }, { value: '40-50', text: '40-50M' },
+                    { value: '50-100', text: '50-100M' }, { value: '100-200', text: '100-200M' },
+                    { value: '200-300', text: '200-300M' }, { value: '300-500', text: '300-500M' },
+                    { value: '500-1000', text: '500-1000M' }, { value: '1000+', text: '1000M以上' }
+                ]}
+            ],
+            wzry: [
+                { id: 'status', label: '状态筛选', options: [
+                    { value: 'all', text: '全部记录' },
+                    { value: 'success', text: '✅ 成功' },
+                    { value: 'auth_fail', text: '⚠️ 鉴权失败' },
+                    { value: 'other_fail', text: '❌ 其他失败' }
+                ]},
+                { id: 'skin', label: '皮肤数量', options: [
+                    { value: 'all', text: '全部' },
+                    { value: '0-100', text: '0~100皮肤' },
+                    { value: '100-200', text: '100~200皮肤' },
+                    { value: '200-300', text: '200~300皮肤' },
+                    { value: '300-400', text: '300~400皮肤' },
+                    { value: '400-500', text: '400~500皮肤' },
+                    { value: '500-600', text: '500~600皮肤' },
+                    { value: '600-700', text: '600~700皮肤' },
+                    { value: '700+', text: '700皮肤以上' }
+                ]},
+                { id: 'rank', label: '段位', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'bronze-silver', text: '青铜到白银' },
+                    { value: 'silver-gold', text: '白银到黄金' },
+                    { value: 'gold-platinum', text: '黄金到铂金' },
+                    { value: 'platinum-diamond', text: '铂金到钻石' },
+                    { value: 'diamond-star', text: '钻石到星耀' },
+                    { value: 'star-king', text: '星耀到王者' },
+                    { value: 'king+', text: '王者以上' }
+                ]},
+                { id: 'vip', label: '贵族等级', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'v0-v1', text: 'V0-V1' },
+                    { value: 'v1-v2', text: 'V1-V2' },
+                    { value: 'v2-v3', text: 'V2-V3' },
+                    { value: 'v3-v4', text: 'V3-V4' },
+                    { value: 'v4-v5', text: 'V4-V5' },
+                    { value: 'v5-v6', text: 'V5-V6' },
+                    { value: 'v6-v7', text: 'V6-V7' },
+                    { value: 'v7-v8', text: 'V7-V8' },
+                    { value: 'v8-v10', text: 'V8-V10' }
+                ]},
+                { id: 'mute', label: '禁言状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'none', text: '此账号没有禁言' },
+                    { value: 'muted', text: '禁言中' }
+                ]},
+                { id: 'credit', label: '信誉分', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'level10', text: '信誉等级10' },
+                    { value: 'below10', text: '信誉等级10以下' }
+                ]},
+                { id: 'account', label: '账号状态', options: [
+                    { value: 'all', text: '全部' },
+                    { value: 'normal', text: '正常状态' },
+                    { value: 'banned', text: '封禁状态' }
+                ]}
+            ]
+        };
+
+        function showToast(msg, isError = false) {
+            toast.textContent = msg;
+            toast.style.backgroundColor = isError ? '#b91c1c' : '#1e293b';
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>' : '&gt;' }[m]));
+        }
+
+        async function copyToClipboard(text, successMsg = '✅ 已复制信息') {
+            if (navigator.clipboard && window.isSecureContext !== false) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast(successMsg);
+                    return true;
+                } catch (err) { console.warn(err); }
+            }
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                ta.setSelectionRange(0, text.length);
+                const success = document.execCommand('copy');
+                document.body.removeChild(ta);
+                if (success) { showToast(successMsg); return true; }
+                throw new Error('execCommand failed');
+            } catch (err) {
+                console.error(err);
+                showToast('❌ 复制失败', true);
+                return false;
+            }
+        }
+
+        function matchRange(value, range) {
+            if (range === 'all') return true;
+            const num = Number(value) || 0;
+            switch(range) {
+                case '0-10': return num >= 0 && num < 10;
+                case '10-20': return num >= 10 && num < 20;
+                case '20-30': return num >= 20 && num < 30;
+                case '30-40': return num >= 30 && num < 40;
+                case '40-50': return num >= 40 && num < 50;
+                case '50+': return num >= 50;
+                case '0-20': return num >= 0 && num < 20;
+                case '20-50': return num >= 20 && num < 50;
+                case '30-50': return num >= 30 && num < 50;
+                case '50-80': return num >= 50 && num < 80;
+                case '80-100': return num >= 80 && num < 100;
+                case '100+': return num >= 100;
+                case '0-100': return num >= 0 && num < 100;
+                case '100-200': return num >= 100 && num < 200;
+                case '200-300': return num >= 200 && num < 300;
+                case '300-400': return num >= 300 && num < 400;
+                case '400+': return num >= 400;
+                case '0-1m': return num >= 0 && num < 1000000;
+                case '1-3m': return num >= 1000000 && num < 3000000;
+                case '3-6m': return num >= 3000000 && num < 6000000;
+                case '6-10m': return num >= 6000000 && num < 10000000;
+                case '10-20m': return num >= 10000000 && num < 20000000;
+                case '20-50m': return num >= 20000000 && num < 50000000;
+                case '50-100m': return num >= 50000000 && num < 100000000;
+                case '100m+': return num >= 100000000;
+                case '0-12': return num >= 0 && num < 12;
+                case '12-30': return num >= 12 && num < 30;
+                case '30-60': return num >= 30 && num < 60;
+                case '0-1': return num >= 0 && num < 1;
+                case '1-10': return num >= 1 && num < 10;
+                case '10-20': return num >= 10 && num < 20;
+                case '20-30': return num >= 20 && num < 30;
+                case '30-40': return num >= 30 && num < 40;
+                case '40-50': return num >= 40 && num < 50;
+                case '50-100': return num >= 50 && num < 100;
+                case '100-200': return num >= 100 && num < 200;
+                case '200-300': return num >= 200 && num < 300;
+                case '300-500': return num >= 300 && num < 500;
+                case '500-1000': return num >= 500 && num < 1000;
+                case '1000+': return num >= 1000;
+                default: return true;
+            }
+        }
+
+        function getLevelRange(level) {
+            if (level === 0) return '未知';
+            if (level < 10) return '0-10';
+            if (level < 20) return '10-20';
+            if (level < 30) return '20-30';
+            if (level < 40) return '30-40';
+            if (level < 50) return '40-50';
+            return '50+';
+        }
+
+        function getAqtwLevelRange(level) {
+            if (level === 0) return '未知';
+            if (level <= 10) return '0-10';
+            if (level <= 20) return '10-20';
+            if (level <= 29) return '20-29';
+            return '30+';
+        }
+
+        function matchLevelRangeHpjy(level, range) {
+            if (range === 'all') return true;
+            const lvl = Number(level) || 0;
+            switch(range) {
+                case '0-5': return lvl < 5;
+                case '5-10': return lvl >= 5 && lvl < 10;
+                case '10-30': return lvl >= 10 && lvl < 30;
+                case '30-40': return lvl >= 30 && lvl < 40;
+                case '40-60': return lvl >= 40 && lvl < 60;
+                case '60+': return lvl >= 60;
+                default: return true;
+            }
+        }
+
+        function matchRank(rankText, filterRank) {
+            if (filterRank === 'all') return true;
+            if (filterRank === '王牌以上') {
+                return /王牌|战神/i.test(rankText);
+            }
+            return rankText.indexOf(filterRank) !== -1;
+        }
+
+        function matchSjzTotalValueRange(value, range) {
+            if (range === 'all') return true;
+            const val = Number(value) || 0;
+            switch(range) {
+                case '0-1': return val >= 0 && val < 1;
+                case '1-10': return val >= 1 && val < 10;
+                case '10-20': return val >= 10 && val < 20;
+                case '20-30': return val >= 20 && val < 30;
+                case '30-40': return val >= 30 && val < 40;
+                case '40-50': return val >= 40 && val < 50;
+                case '50-100': return val >= 50 && val < 100;
+                case '100-200': return val >= 100 && val < 200;
+                case '200-300': return val >= 200 && val < 300;
+                case '300-500': return val >= 300 && val < 500;
+                case '500-1000': return val >= 500 && val < 1000;
+                case '1000+': return val >= 1000;
+                default: return true;
+            }
+        }
+
+        function matchSkinRange(skin, range) {
+            if (range === 'all') return true;
+            const num = Number(skin) || 0;
+            switch(range) {
+                case '0-100': return num >= 0 && num < 100;
+                case '100-200': return num >= 100 && num < 200;
+                case '200-300': return num >= 200 && num < 300;
+                case '300-400': return num >= 300 && num < 400;
+                case '400-500': return num >= 400 && num < 500;
+                case '500-600': return num >= 500 && num < 600;
+                case '600-700': return num >= 600 && num < 700;
+                case '700+': return num >= 700;
+                default: return true;
+            }
+        }
+
+        function getRankRange(rankText) {
+            const rank = rankText;
+            if (rank.includes('青铜') || rank.includes('Bronze')) return 'bronze-silver';
+            if (rank.includes('白银') || rank.includes('Silver')) return 'silver-gold';
+            if (rank.includes('黄金') || rank.includes('Gold')) return 'gold-platinum';
+            if (rank.includes('铂金') || rank.includes('Platinum')) return 'platinum-diamond';
+            if (rank.includes('钻石') || rank.includes('Diamond')) return 'diamond-star';
+            if (rank.includes('星耀') || rank.includes('Star')) return 'star-king';
+            if (rank.includes('王者') || rank.includes('King')) return 'king+';
+            return 'all';
+        }
+
+        function getVipNumber(vipText) {
+            const match = vipText.match(/V(\d+)/i);
+            if (match) return parseInt(match[1]);
+            return 0;
+        }
+
+        function matchVipRange(vipText, range) {
+            if (range === 'all') return true;
+            const vipNum = getVipNumber(vipText);
+            switch(range) {
+                case 'v0-v1': return vipNum >= 0 && vipNum < 1;
+                case 'v1-v2': return vipNum >= 1 && vipNum < 2;
+                case 'v2-v3': return vipNum >= 2 && vipNum < 3;
+                case 'v3-v4': return vipNum >= 3 && vipNum < 4;
+                case 'v4-v5': return vipNum >= 4 && vipNum < 5;
+                case 'v5-v6': return vipNum >= 5 && vipNum < 6;
+                case 'v6-v7': return vipNum >= 6 && vipNum < 7;
+                case 'v7-v8': return vipNum >= 7 && vipNum < 8;
+                case 'v8-v10': return vipNum >= 8 && vipNum <= 10;
+                default: return true;
+            }
+        }
+
+        function filterResults(results) {
+            if (!results.length) return [];
+            const filters = currentFilters;
+            if (currentGame === 'tx') {
+                return results.filter(r => {
+                    if (filters.status && filters.status !== 'all') {
+                        if (filters.status === 'success' && !r.success) return false;
+                        if (filters.status === 'auth_fail' && !r.auth_failed) return false;
+                        if (filters.status === 'other_fail' && (r.success || r.auth_failed)) return false;
+                    }
+                    if (filters.online && filters.online !== 'all') {
+                        if (filters.online === 'online' && r.online_status !== '在线') return false;
+                        if (filters.online === 'offline' && r.online_status !== '不在线') return false;
+                    }
+                    if (filters.ban && filters.ban !== 'all') {
+                        const isBanned = (r.ban_status && r.ban_status !== '当前游戏未被禁玩' && r.ban_status !== '未禁玩' && r.ban_status !== '未知');
+                        if (filters.ban === 'banned' && !isBanned) return false;
+                        if (filters.ban === 'unbanned' && isBanned) return false;
+                    }
+                    return true;
+                });
+            } else if (currentGame === 'wwqy') {
+                return results.filter(r => {
+                    if (filters.status && filters.status !== 'all') {
+                        if (filters.status === 'success' && !r.success) return false;
+                        if (filters.status === 'auth_fail' && !r.auth_failed) return false;
+                        if (filters.status === 'other_fail' && (r.success || r.auth_failed)) return false;
+                    }
+                    if (filters.rank && filters.rank !== 'all' && r.rank !== filters.rank) return false;
+                    if (filters.level && filters.level !== 'all') {
+                        const levelRange = getLevelRange(r.level);
+                        if (levelRange !== filters.level) return false;
+                    }
+                    if (filters.account && filters.account !== 'all') {
+                        if (filters.account === 'unbanned' && r.account_status !== '正常') return false;
+                        if (filters.account === 'banned' && r.account_status !== '已封禁') return false;
+                    }
+                    if (filters.mute && filters.mute !== 'all') {
+                        if (filters.mute === 'muted' && r.mute_status !== '禁言' && r.mute_status !== '已禁言') return false;
+                        if (filters.mute === 'unmuted' && r.mute_status !== '不禁言') return false;
+                    }
+                    return true;
+                });
+            } else if (currentGame === 'aqtw') {
+                return results.filter(r => {
+                    if (filters.status && filters.status !== 'all') {
+                        if (filters.status === 'success' && !r.success) return false;
+                        if (filters.status === 'auth_fail' && !r.auth_failed) return false;
+                        if (filters.status === 'other_fail' && (r.success || r.auth_failed)) return false;
+                    }
+                    if (filters.coin && filters.coin !== 'all' && !matchRange(r.coin, filters.coin)) return false;
+                    if (filters.warehouse && filters.warehouse !== 'all' && !matchRange(r.warehouse_value, filters.warehouse)) return false;
+                    if (filters.level && filters.level !== 'all') {
+                        const lr = getAqtwLevelRange(r.level);
+                        if (lr !== filters.level) return false;
+                    }
+                    if (filters.ban && filters.ban !== 'all' && r.ban_status !== filters.ban) return false;
+                    if (filters.online && filters.online !== 'all' && r.online_status !== filters.online) return false;
+                    return true;
+                });
+            } else if (currentGame === 'ninja') {
+                return results.filter(r => {
+                    if (filters.status && filters.status !== 'all') {
+                        if (filters.status === 'success' && !r.success) return false;
+                        if (filters.status === 'auth_fail' && !r.auth_failed) return false;
+                        if (filters.status === 'other_fail' && (r.success || r.auth_failed)) return false;
+                    }
+                    if (filters.s_ninja && filters.s_ninja !== 'all' && !matchRange(r.s_count, filters.s_ninja)) return false;
+                    if (filters.a_ninja && filters.a_ninja !== 'all' && !matchRange(r.a_count, filters.a_ninja)) return false;
+                    if (filters.b_ninja && filters.b_ninja !== 'all' && !matchRange(r.b_count, filters.b_ninja)) return false;
+                    if (filters.c_ninja && filters.c_ninja !== 'all' && !matchRange(r.c_count, filters.c_ninja)) return false;
+                    if (filters.total_ninja && filters.total_ninja !== 'all' && !matchRange(r.total_count, filters.total_ninja)) return false;
+                    if (filters.online && filters.online !== 'all' && r.online_status !== filters.online) return false;
+                    return true;
+                });
+            } else if (currentGame === 'hpjy') {
+                return results.filter(r => {
+                    if (filters.status && filters.status !== 'all') {
+                        if (filters.status === 'success' && !r.success) return false;
+                        if (filters.status === 'auth_fail' && !r.auth_failed) return false;
+                        if (filters.status === 'other_fail' && (r.success || r.auth_failed)) return false;
+                    }
+                    if (filters.level && filters.level !== 'all' && !matchLevelRangeHpjy(r.level, filters.level)) return false;
+                    if (filters.rank && filters.rank !== 'all' && !matchRank(r.rank, filters.rank)) return false;
+                    if (filters.online && filters.online !== 'all' && r.online_status !== filters.online) return false;
+                    return true;
+                });
+            } else if (currentGame === 'sjz') {
+                return results.filter(r => {
+                    if (filters.status && filters.status !== 'all') {
+                        if (filters.status === 'success' && !r.success) return false;
+                        if (filters.status === 'auth_fail' && !r.auth_failed) return false;
+                        if (filters.status === 'other_fail' && (r.success || r.auth_failed)) return false;
+                    }
+                    if (filters.level && filters.level !== 'all' && !matchRange(r.level, filters.level)) return false;
+                    if (filters.ban && filters.ban !== 'all' && r.ban_status !== filters.ban) return false;
+                    if (filters.freeze && filters.freeze !== 'all' && r.freeze_status !== filters.freeze) return false;
+                    if (filters.online && filters.online !== 'all' && r.online_status !== filters.online) return false;
+                    if (filters.total_value && filters.total_value !== 'all' && !matchSjzTotalValueRange(r.total_value, filters.total_value)) return false;
+                    return true;
+                });
+            } else { // wzry
+                return results.filter(r => {
+                    if (filters.status && filters.status !== 'all') {
+                        if (filters.status === 'success' && !r.success) return false;
+                        if (filters.status === 'auth_fail' && !r.auth_failed) return false;
+                        if (filters.status === 'other_fail' && (r.success || r.auth_failed)) return false;
+                    }
+                    if (filters.skin && filters.skin !== 'all' && !matchSkinRange(r.skin_count, filters.skin)) return false;
+                    if (filters.rank && filters.rank !== 'all' && getRankRange(r.rank) !== filters.rank) return false;
+                    if (filters.vip && filters.vip !== 'all' && !matchVipRange(r.vip_level, filters.vip)) return false;
+                    if (filters.mute && filters.mute !== 'all') {
+                        if (filters.mute === 'none' && r.mute_status !== '没有' && !r.mute_status.includes('无')) return false;
+                        if (filters.mute === 'muted' && !r.mute_status.includes('禁言')) return false;
+                    }
+                    if (filters.credit && filters.credit !== 'all') {
+                        if (filters.credit === 'level10' && r.credit_level !== 10) return false;
+                        if (filters.credit === 'below10' && r.credit_level >= 10) return false;
+                    }
+                    if (filters.account && filters.account !== 'all') {
+                        if (filters.account === 'normal' && r.account_status !== '正常') return false;
+                        if (filters.account === 'banned' && r.account_status !== '封禁') return false;
+                    }
+                    return true;
+                });
+            }
+        }
+
+        function renderFilterBar() {
+            const config = filtersConfig[currentGame];
+            let html = '';
+            for (const filter of config) {
+                let optionsHtml = '';
+                for (const opt of filter.options) {
+                    const selected = (currentFilters[filter.id] === opt.value) ? 'selected' : '';
+                    optionsHtml += `<option value="${opt.value}" ${selected}>${opt.text}</option>`;
+                }
+                html += `<div class="filter-group">
+                            <label>${filter.label}：</label>
+                            <select id="filter_${filter.id}" data-filter-id="${filter.id}">
+                                ${optionsHtml}
+                            </select>
+                         </div>`;
+            }
+            filterBar.innerHTML = html;
+            for (const filter of config) {
+                const sel = document.getElementById(`filter_${filter.id}`);
+                if (sel) {
+                    sel.addEventListener('change', (e) => {
+                        currentFilters[filter.id] = e.target.value;
+                        renderFilteredCards();
+                    });
+                }
+            }
+        }
+
+        function renderFilteredCards() {
+            if (!currentResults.length) {
+                cardsContainer.innerHTML = '<div class="loading">没有查询到任何结果</div>';
+                return;
+            }
+            const filtered = filterResults(currentResults);
+            if (filtered.length === 0) {
+                cardsContainer.innerHTML = '<div class="loading">当前筛选条件下没有匹配的记录</div>';
+                return;
+            }
+            let html = '';
+            for (let i = 0; i < filtered.length; i++) {
+                const item = filtered[i];
+                let statusText = '', statusClass = '';
+                if (item.success === true) {
+                    statusText = '成功';
+                    statusClass = 'status-success';
+                } else if (item.auth_failed === true) {
+                    statusText = '鉴权失败';
+                    statusClass = 'status-authfail';
+                } else {
+                    statusText = '其他失败';
+                    statusClass = 'status-fail';
+                }
+                let tokenLine = '';
+                if (currentGame === 'tx') {
+                    const match = item.formatted.match(/Token:\s*(access_token=[A-F0-9&]+)/);
+                    if (match) tokenLine = match[1];
+                } else if (currentGame === 'wwqy') {
+                    const match = item.formatted.match(/登录的数据(access_token=[A-F0-9&]+)/);
+                    if (match) tokenLine = match[1];
+                } else if (currentGame === 'aqtw') {
+                    const match = item.formatted.match(/Token数据: (access_token=[A-F0-9&]+)/);
+                    if (match) tokenLine = match[1];
+                } else if (currentGame === 'ninja') {
+                    const match = item.formatted.match(/Token:\s*(access_token=[A-F0-9&]+)/);
+                    if (match) tokenLine = match[1];
+                } else if (currentGame === 'hpjy') {
+                    const match = item.formatted.match(/Token:\s*(access_token=[A-F0-9&]+)/);
+                    if (match) tokenLine = match[1];
+                } else if (currentGame === 'sjz') {
+                    const match = item.formatted.match(/Token:\s*(access_token=[A-F0-9&]+)/);
+                    if (match) tokenLine = match[1];
+                } else {
+                    const match = item.formatted.match(/Token:\s*(access_token=[A-F0-9&]+)/);
+                    if (match) tokenLine = match[1];
+                }
+                const copyText = item.formatted;
+                if (currentGame === 'aqtw' && item.success === true) {
+                    html += `<div class="result-card" data-copytext="${escapeHtml(copyText)}">
+                                <div class="flex-between" style="margin-bottom:12px;">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    <span class="token-preview">🔑 ${escapeHtml(tokenLine ? tokenLine.substring(0, 60) : '')}</span>
+                                </div>
+                                <div style="font-size:16px; font-weight:600; margin-bottom:6px;">${escapeHtml(item.role_name)}  <span style="font-size:13px; font-weight:normal;">Lv.${item.level}</span></div>
+                                <div class="detail-line"><span>🆔 ${escapeHtml(item.character_id)}</span><span>💰 ${escapeHtml(item.coin_raw)}</span></div>
+                                <div class="detail-line"><span>📦 仓库: ${escapeHtml(item.warehouse_raw)}</span><span>💎 点卷: ${item.points}</span></div>
+                                <div class="detail-line"><span>💬 聊天: ${escapeHtml(item.chat_status)}</span><span>🔄 交易: ${escapeHtml(item.trade_status)}</span></div>
+                                <div class="detail-line"><span>🚫 封号: ${escapeHtml(item.ban_status)}</span><span>🟢 在线: ${escapeHtml(item.online_status)}</span></div>
+                                <div class="detail-line"><span>📅 登录天数: ${item.login_days}天</span><span>⏱️ 时长: ${escapeHtml(item.play_time)}</span></div>
+                                <div class="detail-line"><span>🕒 最后登录: ${escapeHtml(item.last_login)}</span></div>
+                                <div class="detail-line"><span>🚪 最后登出: ${escapeHtml(item.last_logout)}</span></div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:12px; text-align:center;">✨ 点击卡片复制完整信息</div>
+                             </div>`;
+                } else if (currentGame === 'ninja' && item.success === true) {
+                    html += `<div class="result-card" data-copytext="${escapeHtml(copyText)}">
+                                <div class="flex-between" style="margin-bottom:12px;">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    <span class="token-preview">🔑 ${escapeHtml(tokenLine ? tokenLine.substring(0, 60) : '')}</span>
+                                </div>
+                                <div class="ninja-stats">
+                                    <span>🍥 S: ${item.s_count}</span>
+                                    <span>🍃 A: ${item.a_count}</span>
+                                    <span>💧 B: ${item.b_count}</span>
+                                    <span>🪨 C: ${item.c_count}</span>
+                                    <span>📊 总: ${item.total_count}</span>
+                                    <span>🟢 ${item.online_status}</span>
+                                </div>
+                                <div class="response-preview">${escapeHtml((item.data || item.error || '').substring(0, 200))}</div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:12px; text-align:center;">✨ 点击卡片复制完整信息</div>
+                             </div>`;
+                } else if (currentGame === 'hpjy' && item.success === true) {
+                    html += `<div class="result-card" data-copytext="${escapeHtml(copyText)}">
+                                <div class="flex-between" style="margin-bottom:12px;">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    <span class="token-preview">🔑 ${escapeHtml(tokenLine ? tokenLine.substring(0, 60) : '')}</span>
+                                </div>
+                                <div class="hpjy-stats">
+                                    <span>⭐ 等级: ${item.level}</span>
+                                    <span>🏆 段位: ${item.rank}</span>
+                                    <span>🟢 ${item.online_status}</span>
+                                </div>
+                                <div class="response-preview">${escapeHtml((item.data || item.error || '').substring(0, 200))}</div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:12px; text-align:center;">✨ 点击卡片复制完整信息</div>
+                             </div>`;
+                } else if (currentGame === 'sjz' && item.success === true) {
+                    let totalValueDisp = item.total_value_disp;
+                    if (!totalValueDisp || totalValueDisp === '0M') {
+                        const dataStr = item.data || '';
+                        const m = dataStr.match(/总价值M[:：]\s*([0-9.]+)/);
+                        if (m) totalValueDisp = m[1] + 'M';
+                        else if (dataStr.match(/总价值[:：]\s*([0-9.]+M?)/)) totalValueDisp = RegExp.$1;
+                    }
+                    html += `<div class="result-card" data-copytext="${escapeHtml(copyText)}">
+                                <div class="flex-between" style="margin-bottom:12px;">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    <span class="token-preview">🔑 ${escapeHtml(tokenLine ? tokenLine.substring(0, 60) : '')}</span>
+                                </div>
+                                <div class="sjz-stats">
+                                    <span>📊 等级: ${item.level}</span>
+                                    <span>🚫 封号: ${item.ban_status}</span>
+                                    <span>❄️ 冻结: ${item.freeze_status}</span>
+                                    <span>🟢 在线: ${item.online_status}</span>
+                                    <span>💰 总价值: ${escapeHtml(totalValueDisp)}</span>
+                                </div>
+                                <div class="response-preview">${escapeHtml((item.data || item.error || '').substring(0, 200))}</div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:12px; text-align:center;">✨ 点击卡片复制完整信息</div>
+                             </div>`;
+                } else if (currentGame === 'wzry' && item.success === true) {
+                    html += `<div class="result-card" data-copytext="${escapeHtml(copyText)}">
+                                <div class="flex-between" style="margin-bottom:12px;">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    <span class="token-preview">🔑 ${escapeHtml(tokenLine ? tokenLine.substring(0, 60) : '')}</span>
+                                </div>
+                                <div class="wzry-stats">
+                                    <span>🎨 皮肤: ${item.skin_count}</span>
+                                    <span>🏆 段位: ${item.rank}</span>
+                                    <span>👑 贵族: ${item.vip_level}</span>
+                                    <span>🔇 禁言: ${item.mute_status}</span>
+                                    <span>⭐ 信誉: ${item.credit_level}</span>
+                                    <span>📛 账号: ${item.account_status}</span>
+                                </div>
+                                <div class="response-preview">${escapeHtml((item.data || item.error || '').substring(0, 200))}</div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:12px; text-align:center;">✨ 点击卡片复制完整信息</div>
+                             </div>`;
+                } else {
+                    let preview = '';
+                    if (item.success === true) {
+                        preview = (item.data || '').substring(0, 200);
+                        if (preview.length === 200) preview += '…';
+                    } else {
+                        preview = `错误: ${item.error || '未知'}`;
+                    }
+                    html += `<div class="result-card" data-copytext="${escapeHtml(copyText)}">
+                                <div class="flex-between" style="margin-bottom:12px;">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    <span class="token-preview">🔑 ${escapeHtml(tokenLine ? tokenLine.substring(0, 60) : '')}</span>
+                                </div>
+                                <div class="response-preview">${escapeHtml(preview).replace(/\n/g, '<br>')}</div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:12px; text-align:center;">✨ 点击卡片复制完整信息</div>
+                             </div>`;
+                }
+            }
+            cardsContainer.innerHTML = html;
+            document.querySelectorAll('.result-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const copyText = card.getAttribute('data-copytext');
+                    if (copyText) {
+                        const decoded = copyText.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                        copyToClipboard(decoded);
+                    } else {
+                        showToast('❌ 未找到复制内容', true);
+                    }
+                });
+            });
+        }
+
+        function exportWithCurrentFilter() {
+            const filtered = filterResults(currentResults);
+            if (filtered.length === 0) {
+                showToast('当前筛选条件下没有记录可导出', true);
+                return;
+            }
+            let txtContent = filtered.map(item => item.formatted).join('\n');
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `export_${currentGame}_${new Date().toISOString().slice(0,19)}.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            showToast(`已导出 ${filtered.length} 条记录`);
+        }
+
+        async function sendQuery(textContent) {
+            resultsSection.style.display = 'block';
+            cardsContainer.innerHTML = '<div class="loading">⏳ 正在批量查询，请稍候...</div>';
+            exportBtn.disabled = true;
+            const formData = new FormData();
+            formData.append('text_input', textContent);
+            formData.append('game_type', currentGame);
+            if (currentGame === 'aqtw' || currentGame === 'hpjy' || currentGame === 'wzry') {
+                formData.append('platform', platformSelect.value);
+            }
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                if (!Array.isArray(data)) throw new Error('返回数据格式异常');
+                currentResults = data;
+                const config = filtersConfig[currentGame];
+                currentFilters = {};
+                for (const filter of config) {
+                    currentFilters[filter.id] = 'all';
+                }
+                renderFilterBar();
+                renderFilteredCards();
+                exportBtn.disabled = false;
+                showToast(`查询完成，共 ${data.length} 条记录`);
+            } catch (err) {
+                cardsContainer.innerHTML = `<div class="loading" style="color:#b91c1c;">❌ ${escapeHtml(err.message)}</div>`;
+                showToast(err.message, true);
+                exportBtn.disabled = true;
+            }
+        }
+
+        function switchGame(game) {
+            currentGame = game;
+            if (game === 'tx') {
+                gameTitle.innerText = '腾讯全游戏验号器';
+                gameSub.innerText = '自动提取 access_token&openid&pay_token，支持在线/禁玩筛选';
+                platformSelector.style.display = 'none';
+            } else if (game === 'wwqy') {
+                gameTitle.innerText = '无畏契约验号器';
+                gameSub.innerText = '自动提取 access_token&openid&pay_token，支持段位/等级/封号/禁言筛选';
+                platformSelector.style.display = 'none';
+            } else if (game === 'aqtw') {
+                gameTitle.innerText = '暗区突围验号器';
+                gameSub.innerText = '自动提取任意格式Token，支持科恩币/仓库/等级/封号/在线筛选';
+                platformSelector.style.display = 'flex';
+            } else if (game === 'ninja') {
+                gameTitle.innerText = '火影忍者验号器';
+                gameSub.innerText = '自动提取任意格式Token，支持S/A/B/C忍者、总数、在线筛选';
+                platformSelector.style.display = 'none';
+            } else if (game === 'hpjy') {
+                gameTitle.innerText = '和平精英验号器';
+                gameSub.innerText = '自动提取任意格式Token，支持等级/段位/在线筛选';
+                platformSelector.style.display = 'flex';
+            } else if (game === 'sjz') {
+                gameTitle.innerText = '三角洲验号器';
+                gameSub.innerText = '自动提取任意格式Token，支持等级/封号/冻结/在线/总价值筛选';
+                platformSelector.style.display = 'none';
+            } else {
+                gameTitle.innerText = '王者荣耀验号器';
+                gameSub.innerText = '自动提取任意格式Token，支持皮肤/段位/贵族/禁言/信誉/账号状态筛选';
+                platformSelector.style.display = 'flex';
+            }
+            currentResults = [];
+            resultsSection.style.display = 'none';
+            cardsContainer.innerHTML = '';
+            const config = filtersConfig[currentGame];
+            currentFilters = {};
+            for (const filter of config) {
+                currentFilters[filter.id] = 'all';
+            }
+            renderFilterBar();
+        }
+
+        queryBtn.addEventListener('click', () => {
+            let text = textarea.value.trim();
+            if (!text) { showToast('请填写账号信息或上传文件', true); return; }
+            sendQuery(text);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            textarea.value = '';
+            showToast('已清空输入框');
+        });
+
+        function readFileAndFill(file) {
+            if (!file || !file.name.endsWith('.txt')) { showToast('请上传 .txt 文件', true); return; }
+            const reader = new FileReader();
+            reader.onload = e => { textarea.value = e.target.result; showToast(`已加载文件：${file.name}`); };
+            reader.onerror = () => showToast('文件读取失败', true);
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#3b82f6'; uploadArea.style.background = '#eff6ff'; });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#cbd5e1'; uploadArea.style.background = '#f8fafc'; });
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#cbd5e1';
+            uploadArea.style.background = '#f8fafc';
+            if (e.dataTransfer.files.length) readFileAndFill(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => { if (fileInput.files.length) readFileAndFill(fileInput.files[0]); });
+
+        exportBtn.addEventListener('click', exportWithCurrentFilter);
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const game = tab.getAttribute('data-game');
+                if (game === currentGame) return;
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                switchGame(game);
+            });
+        });
+
+        switchGame('tx');
+        renderFilterBar();
+    })();
+</script>
+</body>
+</html>
