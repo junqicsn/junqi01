@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title></title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #ff6b9d;
+      --secondary: #c084fc;
+      --accent: #60a5fa;
+      --bg: #0a0a1a;
+      --card: rgba(255,255,255,.055);
+      --border: rgba(255,255,255,.1);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.55);
+      --glow-pink: rgba(255, 107, 157, .6);
+      --glow-purple: rgba(192, 132, 252, .6);
+      --glow-blue: rgba(96, 165, 250, .6);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      background: var(--bg);
+      overflow-x: hidden;
+      color: var(--text);
+      position: relative;
+    }
+
+    /* 已彻底移除加载遮罩，避免外部图片/音乐加载失败导致黑屏 */
+    .loading-overlay, #loading { display: none !important; }
+
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        linear-gradient(rgba(10,10,26,.62), rgba(10,10,26,.82)),
+        url('https://owo.ccwu.cc/?img') center / cover no-repeat fixed;
+    }
+
+    .bg-layer::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(255,107,157,.25) 0%, transparent 46%),
+        radial-gradient(ellipse at 80% 20%, rgba(96,165,250,.2) 0%, transparent 48%),
+        radial-gradient(ellipse at 50% 80%, rgba(192,132,252,.2) 0%, transparent 48%),
+        linear-gradient(180deg, rgba(10,10,26,.2), rgba(18,18,42,.45), rgba(10,10,26,.35));
+    }
+
+    #particleCanvas,
+    .stars-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #particleCanvas { z-index: 0; }
+    .stars-container { z-index: 1; overflow: hidden; }
+
+    .soft-sakura-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .soft-sakura {
+      position: absolute;
+      top: -42px;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      opacity: .72;
+      will-change: transform, opacity;
+      animation-name: softSakuraFall;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+      filter: drop-shadow(0 0 6px rgba(255, 166, 190, .35));
+    }
+
+    .soft-sakura::before {
+      content: '🌸';
+      display: block;
+      font-size: 18px;
+      line-height: 1;
+      animation: softSakuraSwing 4.8s ease-in-out infinite;
+    }
+
+    @keyframes softSakuraFall {
+      0% { transform: translate3d(var(--start-x), -8vh, 0) rotate(0deg) scale(var(--scale)); opacity: 0; }
+      8% { opacity: var(--opacity); }
+      45% { transform: translate3d(calc(var(--start-x) + var(--drift-a)), 42vh, 0) rotate(130deg) scale(var(--scale)); }
+      78% { opacity: var(--opacity); }
+      100% { transform: translate3d(calc(var(--start-x) + var(--drift-b)), 110vh, 0) rotate(300deg) scale(var(--scale)); opacity: 0; }
+    }
+
+    @keyframes softSakuraSwing {
+      0%, 100% { transform: translateX(-8px) rotate(-14deg); }
+      50% { transform: translateX(10px) rotate(18deg); }
+    }
+
+    @media (max-width: 420px) {
+      .soft-sakura { width: 15px; height: 15px; }
+      .soft-sakura::before { font-size: 15px; }
+    }
+
+    .star {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%,100% { opacity: .2; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.6); }
+    }
+
+    .scan-line {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.008) 2px, rgba(255,255,255,.008) 4px);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .mouse-follower {
+      position: fixed;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,107,157,.075), transparent 62%);
+      pointer-events: none;
+      z-index: 2;
+      transform: translate(-50%, -50%);
+    }
+
+    .corner-deco {
+      position: fixed;
+      width: 120px;
+      height: 120px;
+      z-index: 5;
+      opacity: .18;
+      pointer-events: none;
+    }
+
+    .corner-deco.top-left { top: 0; left: 0; border-top: 2px solid var(--primary); border-left: 2px solid var(--primary); }
+    .corner-deco.top-right { top: 0; right: 0; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+    .corner-deco.bottom-left { bottom: 0; left: 0; border-bottom: 2px solid var(--secondary); border-left: 2px solid var(--secondary); }
+    .corner-deco.bottom-right { bottom: 0; right: 0; border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary); }
+
+    .main-container {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 42px 20px 36px;
+    }
+
+    .avatar-section { margin-bottom: 20px; animation: floatIn 1s ease-out; }
+
+    .avatar-ring {
+      width: 148px;
+      height: 148px;
+      border-radius: 50%;
+      padding: 4px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent), var(--primary));
+      background-size: 300% 300%;
+      animation: gradientSpin 4s ease infinite, glowPulse 3s ease-in-out infinite;
+      position: relative;
+    }
+
+    .avatar-ring::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent), var(--primary));
+      background-size: 300% 300%;
+      animation: gradientSpin 4s ease infinite;
+      opacity: .35;
+      filter: blur(18px);
+      z-index: -1;
+    }
+
+    .avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      overflow: hidden;
+      background: linear-gradient(135deg, #1a1a3e, #2d1b69);
+    }
+
+    .avatar-inner img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    @keyframes gradientSpin {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 30px var(--glow-pink), 0 0 60px rgba(255,107,157,.2); }
+      50% { box-shadow: 0 0 52px var(--glow-purple), 0 0 85px rgba(192,132,252,.3); }
+    }
+
+    .title-section { text-align: center; margin-bottom: 10px; animation: floatIn 1s ease-out .2s both; }
+
+    .main-title {
+      font-size: 2.8em;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff6b9d, #c084fc, #60a5fa, #ff6b9d);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientSpin 5s ease infinite;
+      position: relative;
+      letter-spacing: 4px;
+    }
+
+    .main-title::after {
+      content: '\5929\9A84\6570\636E\53F7';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #ff6b9d, #c084fc, #60a5fa, #ff6b9d);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientSpin 5s ease infinite;
+      filter: blur(20px);
+      opacity: .5;
+      z-index: -1;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      font-size: 1em;
+      color: rgba(221,202,255,.78);
+      letter-spacing: 8px;
+      font-weight: 300;
+    }
+
+    .divider {
+      width: 200px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), var(--accent), transparent);
+      margin: 15px auto 24px;
+      animation: floatIn 1s ease-out .3s both;
+      position: relative;
+    }
+
+    .divider::after {
+      content: '✦';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--primary);
+      font-size: 14px;
+      background: rgba(10,10,26,.85);
+      padding: 0 10px;
+      text-shadow: 0 0 10px var(--glow-pink);
+    }
+
+
+    .beijing-time-card {
+      width: min(600px, 94vw);
+      margin: 0 auto 10px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 42px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.055)),
+        radial-gradient(circle at 18% 35%, rgba(96,165,250,.22), transparent 38%),
+        radial-gradient(circle at 82% 50%, rgba(255,107,157,.2), transparent 42%);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow:
+        0 14px 34px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.22),
+        0 0 24px rgba(96,165,250,.1);
+      backdrop-filter: blur(18px) saturate(140%);
+      animation: floatIn 1s ease-out .34s both;
+    }
+
+    .beijing-time-card::before {
+      content: '';
+      position: absolute;
+      inset: -140% -30%;
+      background: conic-gradient(from 40deg, transparent, rgba(96,165,250,.2), transparent, rgba(255,107,157,.16), transparent);
+      animation: playerGlow 12s linear infinite;
+      opacity: .45;
+      pointer-events: none;
+    }
+
+    .beijing-time-card::after {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), transparent 60%);
+      pointer-events: none;
+    }
+
+    .time-main {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .time-clock {
+      font-size: clamp(1.08rem, 4.2vw, 1.55rem);
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #fff, #dbeafe 38%, #ffd1e3 76%, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 18px rgba(96,165,250,.18);
+    }
+
+    .time-date {
+      margin-top: 0;
+      font-size: 12px;
+      color: rgba(255,255,255,.62);
+      letter-spacing: .6px;
+      white-space: nowrap;
+    }
+
+    .music-player {
+      width: min(600px, 94vw);
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px 16px;
+      margin-bottom: 28px;
+      border-radius: 30px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.06)),
+        radial-gradient(circle at 20% 20%, rgba(255,107,157,.32), transparent 34%),
+        radial-gradient(circle at 78% 18%, rgba(96,165,250,.25), transparent 36%),
+        radial-gradient(circle at 50% 110%, rgba(192,132,252,.22), transparent 42%);
+      border: 1px solid rgba(255,255,255,.2);
+      box-shadow:
+        0 24px 60px rgba(0,0,0,.36),
+        inset 0 1px 0 rgba(255,255,255,.24),
+        0 0 42px rgba(255,107,157,.15);
+      backdrop-filter: blur(22px) saturate(145%);
+      animation: floatIn 1s ease-out .36s both;
+    }
+
+    .music-player::before {
+      content: '';
+      position: absolute;
+      inset: -65% -25%;
+      background: conic-gradient(from 120deg, transparent, rgba(255,107,157,.25), transparent, rgba(96,165,250,.2), transparent);
+      animation: playerGlow 9s linear infinite;
+      opacity: .6;
+      pointer-events: none;
+    }
+
+    .music-player::after {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      border-radius: 29px;
+      background: linear-gradient(180deg, rgba(255,255,255,.09), transparent 58%);
+      pointer-events: none;
+    }
+
+    @keyframes playerGlow {
+      to { transform: rotate(360deg); }
+    }
+
+    .player-controls {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      justify-self: center;
+      gap: 12px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 12px 28px rgba(0,0,0,.22);
+    }
+
+    .control-btn,
+    .player-btn {
+      position: relative;
+      z-index: 1;
+      border: 0;
+      cursor: pointer;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      transition: transform .22s ease, box-shadow .22s ease, filter .22s ease, opacity .22s ease, background .22s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .control-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 17px;
+      background: rgba(255,255,255,.13);
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 10px 24px rgba(0,0,0,.2);
+    }
+
+    .player-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-size: 20px;
+      background: linear-gradient(135deg, #ff6b9d, #c084fc 52%, #60a5fa);
+      box-shadow: 0 0 26px rgba(255,107,157,.5), 0 12px 30px rgba(0,0,0,.3);
+    }
+
+    .control-btn:hover,
+    .player-btn:hover {
+      transform: translateY(-2px) scale(1.045);
+      filter: brightness(1.1);
+      box-shadow: 0 0 30px rgba(255,107,157,.5), 0 14px 32px rgba(0,0,0,.3);
+    }
+
+    .control-btn:active,
+    .player-btn:active { transform: scale(.94); }
+    .control-btn:disabled,
+    .player-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .progress-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 46px 1fr 46px;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding: 0 2px;
+    }
+
+    .time {
+      font-size: 12px;
+      color: rgba(255,255,255,.72);
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(255,255,255,.12);
+    }
+
+    .progress-shell {
+      height: 26px;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .progress-shell::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.14);
+      box-shadow: inset 0 1px 5px rgba(0,0,0,.3);
+    }
+
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      width: 0%;
+      height: 9px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff6b9d, #c084fc, #60a5fa);
+      box-shadow: 0 0 18px rgba(255,107,157,.42);
+      pointer-events: none;
+    }
+
+    .progress {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      appearance: none;
+      height: 26px;
+      border-radius: 999px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .progress::-webkit-slider-runnable-track { height: 9px; background: transparent; border-radius: 999px; }
+    .progress::-moz-range-track { height: 9px; background: transparent; border-radius: 999px; }
+
+    .progress::-webkit-slider-thumb {
+      appearance: none;
+      width: 19px;
+      height: 19px;
+      margin-top: -5px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid rgba(255,107,157,.92);
+      box-shadow: 0 0 16px rgba(255,255,255,.9), 0 0 26px rgba(255,107,157,.58);
+    }
+
+    .progress::-moz-range-thumb {
+      width: 19px;
+      height: 19px;
+      border: 3px solid rgba(255,107,157,.92);
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 16px rgba(255,255,255,.9), 0 0 26px rgba(255,107,157,.58);
+    }
+
+    .player-status {
+      min-height: 18px;
+      margin-top: -18px;
+      margin-bottom: 18px;
+      color: rgba(255,255,255,.58);
+      font-size: 12px;
+      text-align: center;
+      letter-spacing: 1px;
+      animation: floatIn 1s ease-out .38s both;
+    }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 750px;
+      width: 100%;
+      animation: floatIn 1s ease-out .45s both;
+    }
+
+    .nav-card {
+      position: relative;
+      min-height: 168px;
+      border-radius: 20px;
+      padding: 35px 20px 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .4s cubic-bezier(.175,.885,.32,1.275);
+      text-decoration: none;
+      color: white;
+      overflow: hidden;
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(255,255,255,.09);
+      backdrop-filter: blur(12px);
+    }
+
+    .hot-badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 8;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(255,77,132,.95), rgba(255,168,67,.95));
+      border: 1px solid rgba(255,255,255,.32);
+      box-shadow: 0 0 10px rgba(255,107,157,.34), 0 5px 12px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.3);
+      transform: none;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hot-badge::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -70%;
+      width: 45%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+      transform: skewX(-18deg);
+      animation: hotShine 3s ease-in-out infinite;
+    }
+
+    .hot-badge::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,.16);
+      pointer-events: none;
+    }
+
+    @keyframes hotShine {
+      0%, 55% { left: -70%; }
+      82%, 100% { left: 125%; }
+    }
+
+    @media (max-width: 420px) {
+      .hot-badge {
+        top: 10px;
+        right: 10px;
+        padding: 2px 6px;
+        font-size: 9px;
+        letter-spacing: 0;
+        box-shadow: 0 0 8px rgba(255,107,157,.28), 0 4px 10px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.25);
+      }
+    }
+
+75%, 100% { left: 130%; }
+    }
+
+    .nav-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      padding: 2px;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,.12), transparent);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity .4s ease;
+    }
+
+    .nav-card:hover::before { opacity: 1; background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent)); }
+
+    .nav-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, var(--primary), transparent, var(--accent), transparent);
+      animation: rotateBg 6s linear infinite;
+      opacity: 0;
+      transition: opacity .4s ease;
+      z-index: -1;
+    }
+
+    .nav-card:hover::after { opacity: .1; }
+
+    @keyframes rotateBg { to { transform: rotate(360deg); } }
+
+    .nav-card:hover {
+      transform: translateY(-8px) scale(1.03);
+      border-color: rgba(255,107,157,.32);
+      box-shadow: 0 20px 42px rgba(0,0,0,.42), 0 0 32px rgba(255,107,157,.17), inset 0 0 30px rgba(255,107,157,.05);
+    }
+
+    .nav-card .glow {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: 0;
+      transition: opacity .4s ease;
+      z-index: -1;
+    }
+
+    .nav-card:hover .glow { opacity: .44; }
+    .nav-card:nth-child(1) .glow { background: var(--primary); }
+    .nav-card:nth-child(2) .glow { background: var(--secondary); }
+    .nav-card:nth-child(3) .glow { background: var(--accent); }
+    .nav-card:nth-child(4) .glow { background: #f472b6; }
+    .nav-card:nth-child(5) .glow { background: #a78bfa; }
+    .nav-card:nth-child(6) .glow { background: #34d399; }
+
+    .shine-effect {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+      transition: left .6s ease;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .nav-card:hover .shine-effect { left: 100%; }
+
+    .icon-wrapper {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 15px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+      transition: all .4s ease;
+    }
+
+    .nav-card:nth-child(1) .icon-wrapper { background: linear-gradient(135deg, rgba(255,107,157,.22), rgba(255,107,157,.06)); }
+    .nav-card:nth-child(2) .icon-wrapper { background: linear-gradient(135deg, rgba(192,132,252,.22), rgba(192,132,252,.06)); }
+    .nav-card:nth-child(3) .icon-wrapper { background: linear-gradient(135deg, rgba(96,165,250,.22), rgba(96,165,250,.06)); }
+    .nav-card:nth-child(4) .icon-wrapper { background: linear-gradient(135deg, rgba(244,114,182,.22), rgba(244,114,182,.06)); }
+    .nav-card:nth-child(5) .icon-wrapper { background: linear-gradient(135deg, rgba(167,139,250,.22), rgba(167,139,250,.06)); }
+    .nav-card:nth-child(6) .icon-wrapper { background: linear-gradient(135deg, rgba(52,211,153,.22), rgba(52,211,153,.06)); }
+    .nav-card:hover .icon-wrapper { transform: scale(1.1) rotate(-5deg); }
+
+    .card-title { position: relative; z-index: 2; font-size: 1.1em; font-weight: 700; margin-bottom: 6px; }
+    .card-desc { position: relative; z-index: 2; font-size: .78em; color: rgba(255,255,255,.5); line-height: 1.4; }
+
+    .tooltip {
+      position: absolute;
+      bottom: -35px;
+      left: 50%;
+      transform: translateX(-50%) translateY(5px);
+      background: rgba(0,0,0,.86);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: .7em;
+      white-space: nowrap;
+      opacity: 0;
+      transition: all .3s ease;
+      pointer-events: none;
+      border: 1px solid rgba(255,107,157,.3);
+      z-index: 50;
+    }
+
+    .nav-card:hover .tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .ripple {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.22);
+      transform: scale(0);
+      animation: rippleAnim .6s ease-out;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+    .footer { margin-top: 38px; text-align: center; animation: floatIn 1s ease-out .6s both; }
+    .footer-text { font-size: .8em; color: rgba(255,255,255,.35); letter-spacing: 2px; }
+    .footer-text span { color: var(--primary); display: inline-block; animation: heartbeat 2s ease-in-out infinite; }
+
+    @keyframes heartbeat {
+      0%,100% { transform: scale(1); }
+      15% { transform: scale(1.2); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.15); }
+    }
+
+    @keyframes floatIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .nav-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0 10px; }
+      .main-title { font-size: 2em; }
+      .subtitle { font-size: .85em; letter-spacing: 5px; }
+      .nav-card { padding: 28px 15px 25px; min-height: 152px; }
+      .icon-wrapper { width: 50px; height: 50px; }
+      .music-player { padding: 16px 14px 14px; gap: 12px; }
+      .player-controls { gap: 10px; padding: 8px 10px; }
+      .control-btn { width: 40px; height: 40px; font-size: 15px; }
+      .player-btn { width: 52px; height: 52px; }
+      .time { width: 36px; font-size: 11px; }
+    }
+
+    @media (max-width: 420px) {
+      .main-container { padding-top: 28px; justify-content: flex-start; }
+      .nav-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .main-title { font-size: 1.6em; letter-spacing: 2px; }
+      .subtitle { font-size: .7em; letter-spacing: 3px; }
+      .avatar-ring { width: 112px; height: 112px; }
+      .card-title { font-size: .95em; }
+      .card-desc { font-size: .7em; }
+      .music-player { border-radius: 24px; }
+      .beijing-time-card { padding: 8px 12px; min-height: 38px; margin-bottom: 8px; }
+      .time-main { gap: 8px; flex-wrap: wrap; }
+      .time-date { font-size: 11px; letter-spacing: 0; }
+      .progress-wrap { width: 100%; grid-template-columns: 40px 1fr 40px; gap: 8px; }
+      .player-controls { width: 100%; max-width: 220px; }
+      .control-btn { width: 38px; height: 38px; }
+      .player-btn { width: 50px; height: 50px; }
+    }
+
+    /* ========== 公告弹窗样式 ========== */
+    .notice-mask {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(18,28,46,.55);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+    }
+
+    .notice-box {
+      width: 100%;
+      max-width: 420px;
+      margin: 1.2rem;
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(14px);
+      border-radius: 22px;
+      padding: 1.3rem;
+      position: relative;
+      box-shadow: 0 15px 45px rgba(0,20,40,.18);
+    }
+
+    .notice-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      background: rgba(0,0,0,.05);
+    }
+
+    .notice-title {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 650;
+      color: #0a1e3c;
+    }
+
+    .notice-title-underline {
+      width: 48px;
+      height: 3px;
+      margin: 8px auto 14px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #2563eb, #7aa9ff);
+    }
+
+    .notice-content {
+      font-size: .9rem;
+      line-height: 1.7;
+      color: #1a4cff;
+      background: rgba(255,255,255,.35);
+      padding: .9rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.5);
+    }
+
+    .notice-highlight-block {
+      margin: 8px 0;
+      padding: 8px 10px;
+      border-left: 3px solid #2563eb;
+      background: rgba(37,99,235,.08);
+      border-radius: 0 8px 8px 0;
+      font-weight: 600;
+    }
+
+    .notice-signature {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(0,0,0,.1);
+      text-align: right;
+      color: #5b6e8a;
+      font-size: .85rem;
+    }
+
+    .notice-contact-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: .8rem;
+      border: 0;
+      border-radius: 40px;
+      cursor: pointer;
+      font-size: .95rem;
+      color: #fff;
+      background: linear-gradient(135deg, #ff4d8d, #ff7ab6);
+      box-shadow: 0 8px 20px rgba(255,77,141,.25);
+    }
+
+    .notice-confirm-btn {
+      margin-top: 8px;
+      width: 100%;
+      padding: .8rem;
+      border: 0;
+      border-radius: 40px;
+      cursor: pointer;
+      color: #fff;
+      font-size: .95rem;
+      background: linear-gradient(135deg, #1a4cff, #3b7bff);
+    }
+
+    .notice-tip {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <!-- ========== 公告弹窗 ========== -->
+  <div class="notice-mask" id="noticeMask">
+    <div class="notice-box">
+      <button class="notice-close-btn" id="noticeClose">✕</button>
+      <h2 class="notice-title">📢 重要公告</h2>
+      <div class="notice-title-underline"></div>
+      <div class="notice-content">
+        <p style="color:#333;">👋 尊敬的各位用户：</p>
+        <div class="notice-highlight-block">
+          兄弟们！过了这么长时间天骄也是被秽土转生过来了，休整一段时间就开始回归正常抓号补货售卖了，到时候会发作品的，感谢各位支持🙏🏻🙏🏻
+        </div>
+        <p style="color:#666;">
+          ✨卡网现在暂时没数据号，等有号了马上补货✨
+        </p>
+        <div class="notice-signature">
+          <strong>天骄网站运营团队</strong><br>
+          2026·09·01
+        </div>
+        <button class="notice-contact-btn" id="noticeContactBtn">💗 点我联系天骄</button>
+        <div class="notice-tip" id="noticeTip">3秒后可关闭</div>
+      </div>
+      <button class="notice-confirm-btn" id="noticeOkBtn">✓ 我已知晓</button>
+    </div>
+  </div>
+
+  <div class="bg-layer"></div>
+  <canvas id="particleCanvas"></canvas>
+  <div class="soft-sakura-container" id="softSakuraContainer" aria-hidden="true"></div>
+  <div class="stars-container" id="starsContainer"></div>
+  <div class="scan-line"></div>
+  <div class="mouse-follower" id="mouseFollower"></div>
+
+  <div class="corner-deco top-left"></div>
+  <div class="corner-deco top-right"></div>
+  <div class="corner-deco bottom-left"></div>
+  <div class="corner-deco bottom-right"></div>
+
+  <main class="main-container">
+    <section class="avatar-section" aria-label="头像">
+      <div class="avatar-ring">
+        <div class="avatar-inner">
+          <img src="https://img2.nloln.de/file/BQACAgUAAyEGAASLVN5eAAJck2o6qd-5VcjUiEoMEXPqNfFNhaLfAAL0IAACMCHZVUs3cRuNoFIqPAQ.png" alt="头像" referrerpolicy="no-referrer" />
+        </div>
+      </div>
+    </section>
+
+    <section class="title-section">
+      <h1 class="main-title"><script>document.write(['\u5929','\u9A84','\u6570','\u636E','\u53F7'].join(''))</script></h1>
+      <p class="subtitle">✦ 导 航 主 网 站 ✦</p>
+    </section>
+
+    <div class="divider"></div>
+
+
+    <section class="beijing-time-card" aria-label="实时北京时间">
+      <div class="time-main">
+        <div class="time-clock" id="beijingClock">--:--:--</div>
+        <div class="time-date" id="beijingDate">正在同步北京时间...</div>
+      </div>
+    </section>
+
+    <section class="music-player" aria-label="音乐播放器">
+      <div class="player-controls" aria-label="音乐控制按钮">
+        <button class="control-btn" id="prevBtn" type="button" aria-label="上一首" title="上一首">⏮</button>
+        <button class="player-btn" id="playBtn" type="button" aria-label="播放或暂停" title="播放 / 暂停">▶</button>
+        <button class="control-btn" id="nextBtn" type="button" aria-label="下一首" title="下一首">⏭</button>
+      </div>
+      <div class="progress-wrap">
+        <span class="time" id="currentTime">00:00</span>
+        <div class="progress-shell">
+          <div class="progress-fill" id="progressFill"></div>
+          <input class="progress" id="progressBar" type="range" min="0" max="100" value="0" step="0.1" aria-label="音乐进度条" />
+        </div>
+        <span class="time" id="duration">00:00</span>
+      </div>
+      <audio id="audio" preload="metadata"></audio>
+    </section>
+    <div class="player-status" id="playerStatus"></div>
+
+    <section class="nav-grid" aria-label="导航链接">
+      <a href="https://faka08.com/shop/tianjiao" target="_blank" class="nav-card" onclick="createRipple(event)">
+        <div class="hot-badge">热卖中</div>
+        <div class="glow"></div><div class="shine-effect"></div>
+        <div class="icon-wrapper">
+          
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ff6b9d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h8.72a2 2 0 0 0 2-1.61L23 6H6"/><path d="M13 6h5"/><path d="M15.5 3.5v5"/></svg>
+        </div>
+        <div class="card-title">24h自动发卡网</div><div class="card-desc">购买数据号请点击这里</div><div class="tooltip">✨ 点击前往购买</div>
+      </a>
+
+      <a href="https://wwwa.qyshare.com:2083/s/ghidah" target="_blank" class="nav-card" onclick="createRipple(event)">
+        <div class="glow"></div><div class="shine-effect"></div>
+        <div class="icon-wrapper">
+          
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div class="card-title">上号器下载</div><div class="card-desc">下载上号器请点击这里</div><div class="tooltip">点击下载</div>
+      </a>
+
+      <a href="https://docs.qq.com/doc/DQ0FjeUN0RHJnWExh" target="_blank" class="nav-card" onclick="createRipple(event)">
+        <div class="glow"></div><div class="shine-effect"></div>
+        <div class="icon-wrapper">
+          
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h6"/></svg>
+        </div>
+        <div class="card-title">数据号详细使用教程</div><div class="card-desc">第一次购买数据号的可以看此图文教学</div><div class="tooltip">观看教程</div>
+      </a>
+
+      <a href="https://数据号.com/jw/" target="_blank" class="nav-card" onclick="createRipple(event)">
+        <div class="glow"></div><div class="shine-effect"></div>
+        <div class="icon-wrapper">
+          
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="3"/><path d="M9.9 13.1l4.2-4.2"/></svg>
+        </div>
+        <div class="card-title">数据号禁玩器</div><div class="card-desc">数据号进行禁玩或者解除健康时间</div><div class="tooltip">开始禁玩</div>
+      </a>
+
+      <a href="https://docs.qq.com/doc/DQ3FOVG13aEtXdE12" target="_blank" class="nav-card" onclick="createRipple(event)">
+        <div class="glow"></div><div class="shine-effect"></div>
+        <div class="icon-wrapper">
+          
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M6 8h2"/><path d="M16 8h2"/><path d="M6 12h2"/><path d="M16 12h2"/></svg>
+        </div>
+        <div class="card-title">禁玩器详细使用教程</div><div class="card-desc">第一次使用禁玩器的可以观看此图文教学</div><div class="tooltip">点击观看</div>
+      </a>
+
+      <a href="https://t.me/tianjiaonb" target="_blank" class="nav-card" onclick="createRipple(event)">
+        <div class="glow"></div><div class="shine-effect"></div>
+        <div class="icon-wrapper">
+          
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </div>
+        <div class="card-title">TG群组</div><div class="card-desc">点击进入TG天骄数据官方群</div><div class="tooltip">加入群组</div>
+      </a>
+    </section>
+
+    <footer class="footer">
+      <p class="footer-text"><script>document.write('\u00A9'+['\u5929','\u9A84'].join('')+'2026 <span>\u2665</span> '+['\u5929','\u9A84','\u6570','\u636E','\u53F7'].join(''))</script></p>
+    </footer>
+  </main>
+
+  <script>
+    // 设置页面标题（混淆加密）
+    document.title = ['\u5929','\u9A84','\u6570','\u636E','\u53F7'].join('') + ' - 欢迎访问天骄导航站\u2764\uFE0F';
+
+    // 防止旧版缓存/残留 loading 节点挡住页面
+    const loading = document.getElementById('loading');
+    if (loading) loading.remove();
+
+    // ========== 公告弹窗逻辑 ==========
+    (() => {
+      const noticeMask = document.getElementById('noticeMask');
+      const noticeClose = document.getElementById('noticeClose');
+      const noticeOkBtn = document.getElementById('noticeOkBtn');
+      const noticeContactBtn = document.getElementById('noticeContactBtn');
+      const noticeTip = document.getElementById('noticeTip');
+
+      if (noticeMask && noticeClose && noticeOkBtn) {
+        let canClose = false;
+
+        // 3秒倒计时
+        let t = 3;
+        const timer = setInterval(() => {
+          t--;
+          if (t > 0) {
+            if (noticeTip) noticeTip.innerText = t + "秒后可关闭";
+          } else {
+            if (noticeTip) noticeTip.innerText = "现在可以关闭";
+            clearInterval(timer);
+            canClose = true;
+          }
+        }, 1000);
+
+        const closeNotice = () => {
+          if (!canClose) return;
+          noticeMask.style.display = 'none';
+        };
+
+        noticeClose.onclick = noticeOkBtn.onclick = closeNotice;
+        noticeMask.onclick = (e) => { if (e.target === noticeMask) closeNotice(); };
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && noticeMask.style.display !== 'none') closeNotice();
+        });
+
+        // 联系按钮直接跳转
+        if (noticeContactBtn) {
+          noticeContactBtn.onclick = function() {
+            window.open("https://visitor.chattwt.com/direct/df9c74e5b872ddb9ca155867b261fecc", "_blank");
+          };
+        }
+      }
+    })();
+
+    function createRipple(event) {
+      const card = event.currentTarget;
+      const ripple = document.createElement('div');
+      const rect = card.getBoundingClientRect();
+      ripple.className = 'ripple';
+      ripple.style.left = (event.clientX - rect.left) + 'px';
+      ripple.style.top = (event.clientY - rect.top) + 'px';
+      card.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    }
+    window.createRipple = createRipple;
+
+    const follower = document.getElementById('mouseFollower');
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let followerX = mouseX;
+    let followerY = mouseY;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    function animateFollower() {
+      if (follower) {
+        followerX += (mouseX - followerX) * 0.08;
+        followerY += (mouseY - followerY) * 0.08;
+        follower.style.left = followerX + 'px';
+        follower.style.top = followerY + 'px';
+      }
+      requestAnimationFrame(animateFollower);
+    }
+    animateFollower();
+
+    function createSoftSakura() {
+      const container = document.getElementById('softSakuraContainer');
+      if (!container) return;
+
+      const maxPetals = window.innerWidth <= 420 ? 9 : 13;
+      const spawnGap = window.innerWidth <= 420 ? 1800 : 1400;
+
+      function spawnPetal() {
+        if (container.children.length >= maxPetals) return;
+
+        const petal = document.createElement('span');
+        petal.className = 'soft-sakura';
+
+        const startX = Math.random() * 100;
+        const driftA = (Math.random() * 90 - 45).toFixed(0) + 'px';
+        const driftB = (Math.random() * 160 - 80).toFixed(0) + 'px';
+        const scale = (0.55 + Math.random() * 0.45).toFixed(2);
+        const opacity = (0.45 + Math.random() * 0.28).toFixed(2);
+        const duration = (18 + Math.random() * 10).toFixed(1) + 's';
+
+        petal.style.setProperty('--start-x', startX.toFixed(2) + 'vw');
+        petal.style.setProperty('--drift-a', driftA);
+        petal.style.setProperty('--drift-b', driftB);
+        petal.style.setProperty('--scale', scale);
+        petal.style.setProperty('--opacity', opacity);
+        petal.style.animationDuration = duration;
+        petal.style.animationDelay = (Math.random() * 1.5).toFixed(2) + 's';
+
+        container.appendChild(petal);
+        petal.addEventListener('animationend', () => petal.remove(), { once: true });
+      }
+
+      for (let i = 0; i < Math.ceil(maxPetals / 2); i++) {
+        setTimeout(spawnPetal, i * 650);
+      }
+
+      setInterval(spawnPetal, spawnGap);
+    }
+
+    function createStars() {
+      const container = document.getElementById('starsContainer');
+      if (!container) return;
+      for (let i = 0; i < 80; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + 'vw';
+        star.style.top = Math.random() * 100 + 'vh';
+        star.style.animationDuration = (1.6 + Math.random() * 3) + 's';
+        star.style.animationDelay = Math.random() * 3 + 's';
+        container.appendChild(star);
+      }
+    }
+
+    function initParticles() {
+      const canvas = document.getElementById('particleCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        particles = Array.from({ length: Math.min(80, Math.floor(window.innerWidth / 18)) }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: (Math.random() - 0.5) * 0.35,
+          r: Math.random() * 1.8 + 0.6
+        }));
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p, i) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,.36)';
+          ctx.fill();
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const q = particles[j];
+            const dx = p.x - q.x;
+            const dy = p.y - q.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 105) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(q.x, q.y);
+              ctx.strokeStyle = `rgba(255,107,157,${0.09 * (1 - dist / 105)})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+        });
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      draw();
+      window.addEventListener('resize', resize);
+    }
+
+    document.querySelectorAll('.nav-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const rotateX = (y - rect.height / 2) / 20;
+        const rotateY = (rect.width / 2 - x) / 20;
+        card.style.transform = `translateY(-8px) scale(1.03) perspective(500px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      });
+      card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+    });
+
+
+    const beijingClock = document.getElementById('beijingClock');
+    const beijingDate = document.getElementById('beijingDate');
+
+    function updateBeijingTime() {
+      if (!beijingClock || !beijingDate) return;
+
+      const now = new Date();
+      const timeText = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(now);
+
+      const dateText = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long'
+      }).format(now);
+
+      beijingClock.textContent = timeText;
+      beijingDate.textContent = dateText;
+    }
+
+    updateBeijingTime();
+    setInterval(updateBeijingTime, 1000);
+
+
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+    const playerStatus = document.getElementById('playerStatus');
+
+    // 五首网易云音乐
+    const musicList = [
+      'http://music.163.com/song/media/outer/url?id=1301409077.mp3',
+      'http://music.163.com/song/media/outer/url?id=3339500515.mp3',
+      'http://music.163.com/song/media/outer/url?id=3383991682.mp3',
+      'http://music.163.com/song/media/outer/url?id=1301409077.mp3',
+      'http://music.163.com/song/media/outer/url?id=1968316652.mp3'
+    ];
+    let currentIndex = Math.floor(Math.random() * musicList.length);
+    let hasUserPlayed = false;
+    audio.src = musicList[currentIndex];
+
+    function loadTrack(index) {
+      currentIndex = index;
+      audio.src = musicList[currentIndex];
+      audio.load();
+      setStatus('正在切换音乐...');
+      if (hasUserPlayed) {
+        audio.play().then(() => {
+          playBtn.textContent = '⏸';
+          setStatus('');
+        }).catch(() => {
+          playBtn.textContent = '▶';
+          setStatus('浏览器暂时无法播放该音乐，请稍后重试');
+        });
+      } else {
+        setStatus('');
+      }
+    }
+
+    function prevTrack() {
+      let newIndex = currentIndex - 1;
+      if (newIndex < 0) newIndex = musicList.length - 1;
+      loadTrack(newIndex);
+    }
+
+    function nextTrack() {
+      let newIndex = currentIndex + 1;
+      if (newIndex >= musicList.length) newIndex = 0;
+      loadTrack(newIndex);
+    }
+
+    function formatTime(seconds) {
+      if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function setStatus(text) {
+      if (playerStatus) playerStatus.textContent = text || '';
+    }
+
+    function updateProgressUI(percent) {
+      const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+      if (progressBar) progressBar.value = safePercent;
+      if (progressFill) progressFill.style.width = `${safePercent}%`;
+    }
+
+    if (audio && playBtn && prevBtn && nextBtn && progressBar) {
+      audio.addEventListener('loadedmetadata', () => {
+        durationEl.textContent = formatTime(audio.duration);
+        setStatus('');
+      });
+
+      audio.addEventListener('canplay', () => setStatus(''));
+      audio.addEventListener('waiting', () => setStatus('音乐缓冲中...'));
+      audio.addEventListener('playing', () => setStatus(''));
+
+      audio.addEventListener('error', () => {
+        playBtn.textContent = '▶';
+        setStatus('音乐暂时无法加载，请稍后重试');
+      });
+
+      playBtn.addEventListener('click', async () => {
+        try {
+          if (audio.paused) {
+            setStatus('正在加载音乐...');
+            await audio.play();
+            playBtn.textContent = '⏸';
+            setStatus('');
+            hasUserPlayed = true;
+          } else {
+            audio.pause();
+            playBtn.textContent = '▶';
+          }
+        } catch (err) {
+          playBtn.textContent = '▶';
+          setStatus('浏览器暂时无法播放该音乐，请稍后重试');
+        }
+      });
+
+      prevBtn.addEventListener('click', () => {
+        prevTrack();
+      });
+
+      nextBtn.addEventListener('click', () => {
+        nextTrack();
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          updateProgressUI((audio.currentTime / audio.duration) * 100);
+        }
+      });
+
+      audio.addEventListener('ended', () => {
+        playBtn.textContent = '▶';
+        updateProgressUI(0);
+        // 自动播放下一首
+        nextTrack();
+      });
+
+      progressBar.addEventListener('input', () => {
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          audio.currentTime = (Number(progressBar.value) / 100) * audio.duration;
+          updateProgressUI(progressBar.value);
+        }
+      });
+    }
+
+    try {
+      createSoftSakura();
+      createStars();
+      initParticles();
+    } catch (err) {
+      console.warn('动画初始化失败，但页面会继续显示：', err);
+    }
+
+    console.log('%c✨ '+['\u5929','\u9A84','\u6570','\u636E','\u53F7'].join('')+' - 欢迎来到我的世界 ✨', 'color: #ff6b9d; font-size: 20px; font-weight: bold; text-shadow: 0 0 10px #ff6b9d;');
+  </script>
+</body>
+</html>
